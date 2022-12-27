@@ -24,7 +24,8 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import cm
+    from reportlab.lib.units import inch, cm
+    # from reportlab.lib.pagesizes import cm
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
 
     # TODO: return as buffer vs file
@@ -42,26 +43,43 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
     styles.add(ParagraphStyle(name='Line_Data', alignment=TA_LEFT, fontSize=8, leading=7))
     styles.add(ParagraphStyle(name='Line_Data_Small', alignment=TA_LEFT, fontSize=7, leading=8))
     styles.add(ParagraphStyle(name='Line_Data_Large', alignment=TA_LEFT, fontSize=12, leading=12))
+    styles.add(ParagraphStyle(name='Line_Data_medium_Center', alignment=TA_CENTER, fontSize=9, leading=12))
+    styles.add(ParagraphStyle(name='Line_Fact_Large_Center', alignment=TA_CENTER, fontSize=12, leading=12))
     styles.add(ParagraphStyle(name='Line_Data_Largest', alignment=TA_LEFT, fontSize=14, leading=15))
     styles.add(ParagraphStyle(name='Line_Label', font='Helvetica-Bold', fontSize=7, leading=6, alignment=TA_LEFT))
     styles.add(ParagraphStyle(name='Line_Label_Center', font='Helvetica-Bold', fontSize=7, alignment=TA_CENTER))
 
+    checked_image_path = os.path.join(current_directory, 'images/heritage.png')
     # Get company information
-    company_address = '{0}<br />{1}, {2}<br />{3} {4}'.format(export_data['address'],
-                                                              export_data['city'],
-                                                              export_data['state_code'],
-                                                              export_data['postal_code'],
-                                                              export_data['country_code'])
-    data1 = [[Paragraph(export_data['company'], styles["Line_Data_Large"])],
-             [Paragraph('COMPANY NAME', styles["Line_Label"])],
-             [Paragraph(company_address, styles["Line_Data_Large"])],
-             [Paragraph('COMPANY ADDRESS', styles["Line_Label"])]
+
+    comprobantee = '{0}<br/><br/> {1}<br/> <br/>{2}'.format(export_data['title'],
+                                                  export_data['num_doc_empresa'],
+                                                  export_data['serie_and_correlativo'])
+
+    img = Image(checked_image_path, 12.40 * cm, 2.60 * cm, )
+    img.vAlign = 'CENTER'
+    img.hAlign = 'CENTER'
+    data1 = [
+            [
+                img,
+                Paragraph(comprobantee, styles["Line_Fact_Large_Center"])
+            ],
+             [
+                Paragraph('HERITAGE TEXTILES S.A.C', styles["Line_Data_medium_Center"]),
+                ""
+             ],
+             [
+                 Paragraph('Dirección: Cal Horacio Cachay Díaz 2do 242 urb, santa catalina, lima, lima', styles["Line_Label_Center"]),
+                 ""
+             ]
     ]
 
-    t1 = Table(data1, colWidths=(9 * cm))  # , rowHeights = [.3*cm, .5*cm, .3*cm, .5*cm])
+    t1 = Table(data1, colWidths=(12.6 * cm, 7 * cm))  # , rowHeights = [.3*cm, .5*cm, .3*cm, .5*cm])
+
     t1.setStyle(TableStyle([
-        ('INNERGRID', (0, 0), (0, 1), 0.25, colors.black),
-        ('INNERGRID', (0, 2), (0, 3), 0.25, colors.black),
+        ('INNERGRID', (1, 1), (1, 1), 0.25, colors.black),
+        ('BOX', (1, 0), (1, 0), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     t1.hAlign = 'RIGHT'
 
@@ -69,33 +87,34 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
 
     story.append(Spacer(0.1 * cm, .5 * cm))
 
-    story.append(Paragraph("COMMERCIAL INVOICE", styles["Line_Label_Center"]))
-
-    data1 = [[Paragraph('INTERNATIONAL<br /> AIR WAYBILL NO.', styles["Line_Label"]),
-              Paragraph(export_data['waybill_no'], styles["Line_Data_Largest"]),
-              Paragraph('<b>NOTE: ALl shipments must be <br /> '
-                        'accompanied by a Fedex Express <br /> '
-                        'international Air Waybill.</b>', styles["Line_Data_Small"]),
-             ]]
-
-    t1 = Table(data1, colWidths=(3 * cm, None, 4.5 * cm,))
+    data1 = [[Paragraph('Fecha de Emisión', styles["Line_Label"]),
+              Paragraph('30/12/2022', styles["Line_Label"]),
+              Paragraph('Forma de Pago', styles["Line_Label"]),
+              Paragraph('Al Contado', styles["Line_Label"]),
+              ],
+             [Paragraph('Titular', styles["Line_Label"]),
+              Paragraph('EMPRESA LEYMASTER SOCIEDAD ANONIMA CERRADA - LEYMASTER S.A.C.', styles["Line_Label"]),
+              Paragraph('Guía Remisión', styles["Line_Label"]),
+              Paragraph('T001-1', styles["Line_Label"]),
+             ],
+             [Paragraph('R.U.C', styles["Line_Label"]),
+              Paragraph('20524621186', styles["Line_Label"]),
+              "",
+              "",
+              ],
+             [Paragraph('Dirección del Cliente', styles["Line_Label"]),
+              Paragraph('JR. PROLONGACIÓN GAMARRA NRO. 774 INT. S4 LIMA LIMA LA VICTORIA', styles["Line_Label"]),
+              "",
+              "",
+              ],
+             [Paragraph('Tipo de moneda', styles["Line_Label"]),
+              Paragraph('Soles', styles["Line_Label"]),
+              "",
+              "",
+              ]
+             ]
+    t1 = Table(data1,  colWidths=(3 * cm, 10.7 * cm, 2.9 * cm, 3 * cm))
     t1.setStyle(TableStyle([
-        ('INNERGRID', (1, 0), (-1, -1), 0.25, colors.black),
-        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-
-    story.append(t1)
-
-    data1 = [[Paragraph('DATE OF EXPORTATION', styles["Line_Label"]),
-              Paragraph('EXPORT REFERENCES (i.e. order no., invoice no.)', styles["Line_Label"])],
-             [Paragraph(export_data['export_date'], styles["Line_Data_Largest"]),
-              Paragraph(export_data['export_refs'], styles["Line_Data_Largest"]),
-             ]]
-    t1 = Table(data1)
-    t1.setStyle(TableStyle([
-        ('INNERGRID', (0, 0), (1, 0), 0.25, colors.black),
-        ('INNERGRID', (0, 1), (1, 1), 0.25, colors.black),
         ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
@@ -103,77 +122,16 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
 
     # Shipper/Exporter, Cosignee
 
-    address_paragraph = \
-        "{first_name}, {last_name}<br />" \
-        "{address}<br />" \
-        "{city}, {state_code} <br />" \
-        "{postal_code}, <br />" \
-        "{country_code}"
-
-    cosignee_paragraph = address_paragraph.format(**cosignee_data)
-    exporter_paragraph = address_paragraph.format(**exporter_data)
-
-    data1 = [[Paragraph('SHIPPER/EXPORTER (complete name and address)', styles["Line_Label"]),
-              Paragraph('CONSIGNEE (complete name and address)', styles["Line_Label"])],
-
-             [Paragraph(cosignee_paragraph, styles["Line_Data_Large"]),
-              Paragraph(exporter_paragraph, styles["Line_Data_Large"])]
-             ]
-
-    t1 = Table(data1)
-    t1.setStyle(TableStyle([
-        ('INNERGRID', (0, 0), (1, 0), 0.25, colors.black),
-        ('INNERGRID', (0, 1), (1, 1), 0.25, colors.black),
-        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    story.append(t1)
-
-    if not importer_data:
-        # importer_data = {'first_name': '', 'last_name': '',
-        #                  'postal_code': '', 'country_code': '', 'state_code': '',
-        #                  'city': '', 'address': ''}
-        importer_paragraph = ''
-    else:
-        importer_paragraph = address_paragraph.format(**importer_data)
-
-    data1 = [[Paragraph('COUNTRY OF EXPORT', styles["Line_Label"]),
-              Paragraph('IMPORTER -- IF OTHER THAN CONSIGNEE <br />(complete name and address)', styles["Line_Label"])],
-             [Paragraph(export_data['export_country'], styles["Line_Data_Largest"]),
-              Paragraph(importer_paragraph, styles["Line_Data_Large"])],
-             [Paragraph('COUNTRY OF MANUFACTURE', styles["Line_Label"]), ''],
-             [Paragraph(export_data['manufacture_country'], styles["Line_Data_Largest"]), ''],
-             [Paragraph('COUNTRY OF ULTIMATE DESTINATION', styles["Line_Label"]), ''],
-             [Paragraph(export_data['destination_country'], styles["Line_Data_Largest"]), ''],
-    ]
-    t1 = Table(data1)
-    t1.setStyle(TableStyle([
-        ('INNERGRID', (0, 1), (0, 2), 0.25, colors.black),
-        ('INNERGRID', (0, 3), (0, 4), 0.25, colors.black),
-        ('INNERGRID', (0, 0), (1, 0), 0.25, colors.black),
-        ('INNERGRID', (0, 1), (1, 1), 0.25, colors.black),
-        ('INNERGRID', (0, 2), (1, 2), 0.25, colors.black),
-        ('INNERGRID', (0, 3), (1, 3), 0.25, colors.black),
-        ('INNERGRID', (0, 4), (1, 4), 0.25, colors.black),
-        ('INNERGRID', (0, 5), (1, 5), 0.25, colors.black),
-        ('SPAN', (1, 1), (1, 5)),
-        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    story.append(t1)
-
-    data1 = [[Paragraph('MARKS/NOS.', styles["Line_Label"]),
-              Paragraph('NO. OF<br />PKGS.', styles["Line_Label"]),
-              Paragraph('TYPE OF<br />PACKAGING', styles["Line_Label"]),
-              Paragraph('FULL DESCRIPTION OF GOODS', styles["Line_Label"]),
-              Paragraph('QTY.', styles["Line_Label"]),
-              Paragraph('UNIT OF MEA-<br />SURE', styles["Line_Label"]),
-              Paragraph('WEIGHT', styles["Line_Label"]),
-              Paragraph('UNIT VALUE', styles["Line_Label"]),
-              Paragraph('TOTAL<br />VALUE.', styles["Line_Label"])],
+    data1 = [[Paragraph('CODIGO.', styles["Line_Label"]),
+              Paragraph('CANTIDAD', styles["Line_Label"]),
+              Paragraph('UND', styles["Line_Label"]),
+              Paragraph('DESCRIPCION', styles["Line_Label"]),
+              Paragraph('P. UNITARIO', styles["Line_Label"]),
+              Paragraph('VALOR VENTA', styles["Line_Label"]),
+              ],
     ]
 
-    t1 = Table(data1, colWidths=(1.7 * cm, 1.3 * cm, 2 * cm, 7 * cm, 1 * cm, 1.5 * cm, 1.5 * cm, 1.8 * cm, 1.8 * cm))
+    t1 = Table(data1, colWidths=(3.3 * cm, 2.3 * cm, 2.3 * cm, 7 * cm, 2.3 * cm, 2.4 * cm))
     t1.setStyle(TableStyle([
         ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
         ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
@@ -181,17 +139,15 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
     ]))
     story.append(t1)
 
-    data1 = [[Paragraph(str(product['marks_nos']), styles["Line_Data"]),
-              Paragraph(str(product['no_packages']), styles["Line_Data"]),
-              Paragraph(str(product['package_type']), styles["Line_Data"]),
-              Paragraph(str(product['description']), styles["Line_Data"]),
-              Paragraph(str(product['quantity']), styles["Line_Data"]),
-              Paragraph(str(product['measure_unit']), styles["Line_Data"]),
-              Paragraph(str(product['weight']), styles["Line_Data"]),
-              Paragraph(str(product['unit_value']), styles["Line_Data"]),
-              Paragraph(str(product['total_value']), styles["Line_Data"])] for product in products]
+    data1 = [[Paragraph(str(product['codigo']), styles["Line_Data_Small"]),
+              Paragraph(str(product['cantidad']), styles["Line_Data_Small"]),
+              Paragraph(str(product['unidad_medida']), styles["Line_Data_Small"]),
+              Paragraph(str(product['descripcion']), styles["Line_Data_Small"]),
+              Paragraph(str(product['precio_unitario']), styles["Line_Data_Small"]),
+              Paragraph(str(product['valor_venta']), styles["Line_Data_Small"])
+              ] for product in products]
 
-    t1 = Table(data1, colWidths=(1.7 * cm, 1.3 * cm, 2 * cm, 7 * cm, 1 * cm, 1.5 * cm, 1.5 * cm, 1.8 * cm, 1.8 * cm))
+    t1 = Table(data1, colWidths=(3.3 * cm, 2.3 * cm, 2.3 * cm, 7 * cm, 2.3 * cm, 2.4 * cm))
     t1.setStyle(TableStyle([
         ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
         ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
@@ -204,85 +160,136 @@ def generate_commercial_invoice(export_data, exporter_data, cosignee_data, produ
     total_value = 0.0
 
     for product in products:
-        total_packages += product['no_packages']
-        total_weight += product['weight']
-        total_value += product['total_value']
+        total_packages += product['cantidad']
+        total_weight += float(product['precio_unitario'])
+        total_value += float(product['valor_venta'])
 
     data1 = [['',
-              Paragraph('TOTAL NO OF PKGS.', styles["Line_Label"]),
               '',
-              Paragraph('TOTAL WEIGHT', styles["Line_Label"]),
               '',
-              Paragraph('TOTAL INVOICE VALUE', styles["Line_Label"]),
+              '',
+              Paragraph('SUBTOTAL', styles["Line_Data_Small"]),
+              Paragraph('S/ 100.00', styles["Line_Data_Small"])
               ],
              ['',
-              Paragraph(str(total_packages), styles["Line_Data"]),
-              Paragraph('SEE http://www.fedex.com FOR MORE INFORMATION ON THE CORPORATE INVOICE.',
-                        styles["Line_Label_Center"]),
-              Paragraph(str(total_weight), styles["Line_Data"]),
               '',
-              Paragraph('${0}'.format(total_value), styles["Line_Data"]),
-              ]]
+              '',
+              '',
+              Paragraph('IGV', styles["Line_Data_Small"]),
+              Paragraph('S/ 100.00', styles["Line_Data_Small"]),
+              ],
+             ['',
+              '',
+              '',
+              '',
+              Paragraph('TOTAL', styles["Line_Data_Small"]),
+              Paragraph('S/ 100.00', styles["Line_Data_Small"]),
+              ]
+             ]
 
-    t1 = Table(data1, colWidths=(1.7 * cm, 1.3 * cm, 11.5 * cm, 1.5 * cm, 1.8 * cm, 1.8 * cm))
+    t1 = Table(data1, colWidths=(3.3 * cm, 2.3 * cm, 2.3 * cm, 7 * cm, 2.3 * cm, 2.4 * cm))
     t1.setStyle(TableStyle([
-        ('INNERGRID', (1, 0), (1, 1), 0.25, colors.black),
-        ('INNERGRID', (3, 0), (3, 1), 0.25, colors.black),
-        ('INNERGRID', (5, 0), (5, 1), 0.25, colors.black),
-        ('BOX', (1, 0), (1, 1), 0.25, colors.black),
-        ('BOX', (3, 0), (3, 1), 0.25, colors.black),
-        ('BOX', (5, 0), (5, 1), 0.25, colors.black),
+        ('INNERGRID', (4, 0), (4, 3), 0.25, colors.black),
+        ('INNERGRID', (5, 0), (5, 3), 0.25, colors.black),
+        ('BOX', (4, 0), (5, 3), 0.25, colors.black),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     story.append(t1)
-
-    checked_image_path = os.path.join(current_directory, 'images/checked.png')
-    unchecked_image_path = os.path.join(current_directory, 'images/unchecked.png')
-
-    flag_image_paths = {}
-    for key, value in flags.items():
-        flag_image_paths[key] = checked_image_path if value else unchecked_image_path
-
-    check_data = [[Paragraph('Check one', styles["Line_Label"]), ''],
-                  [Image(flag_image_paths['fob'], .25 * cm, .25 * cm), Paragraph('F.O.B.', styles["Line_Label"])],
-                  [Image(flag_image_paths['caf'], .25 * cm, .25 * cm), Paragraph('C & F', styles["Line_Label"])],
-                  [Image(flag_image_paths['cif'], .25 * cm, .25 * cm), Paragraph('C.I.F.', styles["Line_Label"])]]
-    tc = Table(check_data, colWidths=(.4 * cm, None))
-    tc.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('SPAN', (0, 0), (1, 0)),
-    ]))
 
     data1 = [[Paragraph(
-        'For U.S. EXPORT ONLY: THESE COMMODITIES, TECHNOLOGY OR SOFTWARE WERE EXPORTED FROM THE UNITED STATES '
-        'IN ACCORDANCE WITH THE EXPORT ADMINISTRATION REGULATIONS. DIVERSION CONTRARY TO THE UNITED STATES LAW '
-        'IS PROHIBITED.', styles["Line_Label"]), '',
-              tc]]
+        'SON MIL NOVECIENTOS Y 00/100 SOLES',
+        styles["Line_Label"]), '',
+              '']]
     t1 = Table(data1, colWidths=(None, 3.3 * cm, 1.8 * cm))
     t1.setStyle(TableStyle([
-        ('BOX', (2, 0), (2, 0), 0.25, colors.black),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     story.append(t1)
 
-    story.append(Table([[Paragraph('I DECLARE THE INFORMATION CONTAINED IN THIS '
-                                   'INVOICE TO BE TRUE AND CORRECT', styles["Line_Label"])]]))
+    story.append(Table([[Paragraph('Forma de pago: '
+                                   'Al contado', styles["Line_Label"])]]))
 
     story.append(Spacer(0.1 * cm, .5 * cm))
 
     # TODO: signature could be image ? Date could be sign_date ?
     # TODO: signature, date
-    data1 = [
-        [Paragraph(export_data['company'], styles["Line_Data_Large"]), '',
-         Paragraph(export_data['export_date'], styles["Line_Data_Large"])
-        ],
-        [Paragraph('SIGNATURE OF SHIPPER/EXPORTER (Type name and title and sign.)', styles["Line_Label"]), '',
-         Paragraph('DATE', styles["Line_Label"])]]
 
-    t1 = Table(data1, colWidths=(None, 2*cm, None))
+    detallecredito = '{0}<br/> <br/> {1} <br/><br/>{2}'.format('Información del Crédito',
+                                                            'Monto neto pendiente de pago:',
+                                                            'Total de cuotas:')
+
+
+    data1 = [
+        [Paragraph('Información del Crédito: ', styles["Line_Data_Small"]),
+         Paragraph('Monto neto pendiente de pago: S/ 4300,00', styles["Line_Data_Small"]),
+         Paragraph('Total de cuotas: 4', styles["Line_Data_Small"]),
+         "",
+         ]
+    ]
+
+    t1 = Table(data1, colWidths=(4.3 * cm, 5.5 * cm, 5.5 * cm, 4.3 * cm))
     t1.setStyle(TableStyle([
-        ('INNERGRID', (0, 0), (0, 1), 0.25, colors.black),
-        ('INNERGRID', (2, 0), (2, 1), 0.25, colors.black),
+        ('INNERGRID', (1, 1), (1, 1), 0.25, colors.black),
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    story.append(t1)
+
+    story.append(Spacer(0.1 * cm, .5 * cm))
+    data1 = [
+        [Paragraph('Nº Cuota', styles["Line_Data_Small"]),
+         Paragraph('Fech. Vencimiento', styles["Line_Data_Small"]),
+         Paragraph('Monto', styles["Line_Data_Small"]),
+         ]
+    ]
+
+    t1 = Table(data1, colWidths=(2 * cm, 2.5 * cm, 2 * cm))
+
+    t1.setStyle(TableStyle([
+        ('INNERGRID', (1, 1), (1, 1), 0.25, colors.black),
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    story.append(t1)
+
+    letras = [
+        {
+            'n_cuota': '1',
+            'fech_ven': '10/01/2023',
+            'mto': 'S/ 100,00',
+        },
+        {
+            'n_cuota': '2',
+            'fech_ven': '10/01/2023',
+            'mto': 'S/ 100,00',
+        },
+        {
+            'n_cuota': '3',
+            'fech_ven': '10/01/2023',
+            'mto': 'S/ 100,00',
+        },
+        {
+            'n_cuota': '4',
+            'fech_ven': '10/01/2023',
+            'mto': 'S/ 100,00',
+        }
+    ]
+
+    data1 = [
+        [Paragraph(letra['n_cuota'], styles["Line_Data_Small"]),
+         Paragraph(letra['fech_ven'], styles["Line_Data_Small"]),
+         Paragraph(letra['mto'], styles["Line_Data_Small"]),
+         ] for letra in letras
+    ]
+
+    t1 = Table(data1, colWidths=(2 * cm, 2.5 * cm, 2 * cm))
+
+    t1.setStyle(TableStyle([
+        ('INNERGRID', (1, 1), (1, 1), 0.25, colors.black),
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
 
     story.append(t1)
